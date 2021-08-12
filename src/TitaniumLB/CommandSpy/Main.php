@@ -12,16 +12,20 @@ class Main extends PluginBase
 {
     public $snoopers = [];
     public $cfg;
+    public $protectedPlayers = [];
+    public $protectedCommands = [];
 
     public function onEnable(): void
     {
         @mkdir($this->getDataFolder());
         $this->getServer()->getPluginManager()->registerEvents(new EventListener($this), $this);
         $this->cfg = new Config($this->getDataFolder() . "config.yml", Config::YAML, array(
-            "protected-players" => ["INSERT PLAYER NAMES HERE", "Steve", "Alex"],
-            "protected-commands" => ["INSERT COMMANDS HERE", "ban", "TEST2"],
+            "protected-players" => "Steve,Alex",
+            "protected-commands" => "kick,ban",
             "Log-SpyMode-To-Console" => "true",
         ));
+        $this->protectedPlayers = explode(",", $this->getConfig()->get("protected-players"));
+        $this->protectedCommands = explode(",", $this->getConfig()->get("protected-commands"));
     }
 
     public function onCommand(CommandSender $sender, Command $command, string $label, array $args): bool
@@ -49,7 +53,6 @@ class Main extends PluginBase
                     $sender->sendMessage("Spy-mode is already active.");
                 }
             }
-
         }
         return true;
     }
