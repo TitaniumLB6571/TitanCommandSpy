@@ -10,5 +10,5 @@ commands:
     description: Enter Spy-Mode
     aliases: ["cspy"]
 permissions:
-   commandspy.cmd:
+  commandspy.cmd:
     default: op

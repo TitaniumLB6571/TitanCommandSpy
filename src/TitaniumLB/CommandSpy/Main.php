@@ -11,12 +11,15 @@ use pocketmine\Player;
 class Main extends PluginBase
 {
     public $snoopers = [];
+    public $cfg;
 
     public function onEnable(): void
     {
         @mkdir($this->getDataFolder());
         $this->getServer()->getPluginManager()->registerEvents(new EventListener($this), $this);
         $this->cfg = new Config($this->getDataFolder() . "config.yml", Config::YAML, array(
+            "protected-players" => ["INSERT PLAYER NAMES HERE", "Steve", "Alex"],
+            "protected-commands" => ["INSERT COMMANDS HERE", "ban", "TEST2"],
             "Log-SpyMode-To-Console" => "true",
         ));
     }
@@ -39,7 +42,14 @@ class Main extends PluginBase
                     $sender->sendMessage("§cYou don't have permission to use this command!");
                     return true;
                 }
+            } else {
+                if ($this->cfg->get("Log-SpyMode-To-Console") == "false") {
+                    $sender->sendMessage("Set 'Log-SpyMode-To-Console' to 'true' to enable spy-mode in console");
+                } else {
+                    $sender->sendMessage("Spy-mode is already active.");
+                }
             }
+
         }
         return true;
     }
