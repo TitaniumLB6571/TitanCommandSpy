@@ -7,14 +7,15 @@ use pocketmine\event\player\PlayerCommandPreprocessEvent;
 
 class EventListener implements Listener
 {
-    public $plugin;
+    /** @var Main  */
+    public Main $plugin;
 
     public function __construct(Main $plugin)
     {
         $this->plugin = $plugin;
     }
 
-    public function getPlugin()
+    public function getPlugin(): Main
     {
         return $this->plugin;
     }

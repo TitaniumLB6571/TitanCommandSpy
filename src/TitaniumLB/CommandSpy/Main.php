@@ -6,14 +6,21 @@ use pocketmine\plugin\PluginBase;
 use pocketmine\utils\Config;
 use pocketmine\command\Command;
 use pocketmine\command\CommandSender;
-use pocketmine\Player;
+use pocketmine\player\Player;
 
 class Main extends PluginBase
 {
-    public $snoopers = [];
-    public $cfg;
-    public $protectedPlayers = [];
-    public $protectedCommands = [];
+    /** @var array */
+    public array $snoopers = [];
+
+    /** @var Config */
+    public Config $cfg;
+
+    /** @var array */
+    public array $protectedPlayers = [];
+
+    /** @var array */
+    public array $protectedCommands = [];
 
     public function onEnable(): void
     {
