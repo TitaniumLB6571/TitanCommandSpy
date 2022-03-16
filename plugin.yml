@@ -9,6 +9,7 @@ commands:
   commandspy:
     description: Enter Spy-Mode
     aliases: ["cspy"]
+    permission: "commandspy.cmd"
 
 permissions:
   commandspy.cmd:
