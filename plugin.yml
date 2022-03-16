@@ -1,6 +1,6 @@
 name: CommandSpy
 main: TitaniumLB\CommandSpy\Main
-version: 1.0.0
+version: 1.0.4
 api: 4.0.0
 author: TitaniumLB
 description: Cool Commandspy by Titanium
