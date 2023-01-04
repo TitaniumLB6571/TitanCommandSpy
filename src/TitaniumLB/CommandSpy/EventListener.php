@@ -40,10 +40,12 @@ class EventListener implements Listener
         if (!empty($this->getPlugin()->snoopers)) {
             foreach ($this->getPlugin()->snoopers as $snooper) {
                 if ($msg[0] == "/") {
-                    if (in_array($sender->getName(), $this->getPlugin()->protectedPlayers) or in_array($cmd, $this->getPlugin()->protectedCommands) == true || stripos($msg, "login") || stripos($msg, "reg") || stripos($msg, "register")) {
-                        $snooper->sendMessage("§cSpy-Mode§8» §8:§6" . $sender->getName() . "§8: §e§lENCRYPTED§r");
-                    } else {
-                        $snooper->sendMessage("§cSpy-Mode§8» §8:§6" . $sender->getName() . "§8: §f" . $msg);
+                    if($snooper->isConnected()) {
+                        if (in_array($sender->getName(), $this->getPlugin()->protectedPlayers) or in_array($cmd, $this->getPlugin()->protectedCommands) == true || stripos($msg, "login") || stripos($msg, "reg") || stripos($msg, "register")) {
+                            $snooper->sendMessage("§cSpy-Mode§8» §8:§6" . $sender->getName() . "§8: §e§lENCRYPTED§r");
+                        } else {
+                            $snooper->sendMessage("§cSpy-Mode§8» §8:§6" . $sender->getName() . "§8: §f" . $msg);
+                        }
                     }
                 }
             }
