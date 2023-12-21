@@ -2,12 +2,14 @@
 
 namespace TitaniumLB\CommandSpy;
 
+use pocketmine\console\ConsoleCommandSender;
 use pocketmine\event\Listener;
-use pocketmine\event\player\PlayerCommandPreprocessEvent;
+use pocketmine\event\server\CommandEvent;
+use pocketmine\player\Player;
+use pocketmine\Server;
 
 class EventListener implements Listener
 {
-    /** @var Main  */
     public Main $plugin;
 
     public function __construct(Main $plugin)
@@ -20,33 +22,44 @@ class EventListener implements Listener
         return $this->plugin;
     }
 
-    public function onPlayerCmd(PlayerCommandPreprocessEvent $event)
+    public function onCommandEvent(CommandEvent $event): void
     {
-        $sender = $event->getPlayer();
-        $msg = $event->getMessage();
+        $sender = $event->getSender();
+        $msg = $event->getCommand();
         $words = explode(" ", $msg);
-        $cmd = strtolower(substr(array_shift($words), 1));
+        $cmd = strtolower(array_shift($words));
 
-        if ($this->getPlugin()->cfg->get("Log-SpyMode-To-Console") == "true") {
-            if ($msg[0] == "/") {
-                if (stripos($msg, "login") || stripos($msg, "log") || stripos($msg, "reg") || stripos($msg, "register")) {
-                    $this->getPlugin()->getLogger()->info("§cSpy-Mode§8» §8:§6" . $sender->getName() . "§8: §e§lENCRYPTED§r");
-                } else {
-                    $this->getPlugin()->getLogger()->info("§cSpy-Mode§8» §8:§6" . $sender->getName() . "§8: §f" . $msg);
+        if ($sender instanceof Player) {
+            $protectedPlayers = $this->getPlugin()->getProtectedPlayers();
+            $protectedCommands = $this->getPlugin()->getProtectedCommands();
+
+            if (in_array($sender->getName(), $protectedPlayers) || in_array($cmd, $protectedCommands)) return;
+
+            if ($sender->isConnected()) {
+                foreach ($this->getPlugin()->getSnoopers() as $snooperName => $targets) {
+                    $snooper = Server::getInstance()->getPlayerByPrefix($snooperName);
+                    if ($snooper !== null && $this->getPlugin()->isSpying($snooper)) {
+                        $this->sendSpyMessage($snooper, $sender->getName(), $msg);
+                    }
                 }
-            }
-        }
 
-        if (!empty($this->getPlugin()->snoopers)) {
-            foreach ($this->getPlugin()->snoopers as $snooper) {
-                if ($msg[0] == "/") {
-                    if (in_array($sender->getName(), $this->getPlugin()->protectedPlayers) or in_array($cmd, $this->getPlugin()->protectedCommands) == true || stripos($msg, "login") || stripos($msg, "reg") || stripos($msg, "register")) {
-                        $snooper->sendMessage("§cSpy-Mode§8» §8:§6" . $sender->getName() . "§8: §e§lENCRYPTED§r");
-                    } else {
-                        $snooper->sendMessage("§cSpy-Mode§8» §8:§6" . $sender->getName() . "§8: §f" . $msg);
+                foreach ($this->getPlugin()->getTargetValue() as $targetSnooperName => $targetPlayers) {
+                    $targetSnooper = Server::getInstance()->getPlayerByPrefix($targetSnooperName);
+                    if ($targetSnooper !== null && $this->getPlugin()->isSpyingOnTarget($targetSnooper, $sender->getName())) {
+                        $this->sendSpyMessage($targetSnooper, $sender->getName(), $msg);
                     }
                 }
             }
         }
+        if ($this->getPlugin()->cfg->get("Log-SpyMode-To-Console") == "true") {
+            if ($sender instanceof ConsoleCommandSender) {
+                return;
+            } else $this->getPlugin()->getLogger()->info("§cSpy-Mode§8» §8:§6" . $sender->getName() . "§8: §f/" . $msg);
+        }
+    }
+
+    private function sendSpyMessage(Player $snooper, string $senderName, string $command): void
+    {
+        $snooper->sendMessage("§cSpy-Mode§8» §8:§6$senderName" . "§8: §f/$command");
     }
 }

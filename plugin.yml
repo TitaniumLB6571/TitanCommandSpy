@@ -1,16 +1,16 @@
 name: CommandSpy
 main: TitaniumLB\CommandSpy\Main
-version: 1.0.4
-api: 4.0.0
+version: 1.0.5
+api: 5.0.0
 author: TitaniumLB
 description: Cool Commandspy by Titanium
 
-commands:
-  commandspy:
-    description: Enter Spy-Mode
-    aliases: ["cspy"]
-    permission: "commandspy.cmd"
-
 permissions:
   commandspy.cmd:
+    default: op
+
+  commandspy.cmd.list:
+    default: op
+
+  commandspy.cmd.target:
     default: op

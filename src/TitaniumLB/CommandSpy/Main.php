@@ -3,23 +3,21 @@
 namespace TitaniumLB\CommandSpy;
 
 use pocketmine\plugin\PluginBase;
+use pocketmine\Server;
 use pocketmine\utils\Config;
-use pocketmine\command\Command;
-use pocketmine\command\CommandSender;
 use pocketmine\player\Player;
+use pocketmine\utils\TextFormat;
+use TitaniumLB\CommandSpy\command\SpyCommand;
 
 class Main extends PluginBase
 {
-    /** @var array */
-    public array $snoopers = [];
 
-    /** @var Config */
+    public const PREFIX = "§cSpy-Mode§8» §8: ";
+    private array $snoopers = [];
+    private array $targetedSnoopers = [];
+    private array $targetValue = [];
     public Config $cfg;
-
-    /** @var array */
     public array $protectedPlayers = [];
-
-    /** @var array */
     public array $protectedCommands = [];
 
     public function onEnable(): void
@@ -33,34 +31,93 @@ class Main extends PluginBase
         ));
         $this->protectedPlayers = explode(",", $this->getConfig()->get("protected-players"));
         $this->protectedCommands = explode(",", $this->getConfig()->get("protected-commands"));
+
+        Server::getInstance()->getCommandMap()->register("CommandSpy", new SpyCommand($this));
     }
 
-    public function onCommand(CommandSender $sender, Command $command, string $label, array $args): bool
+    public function toggleGlobalSpyMode(Player $sender): void
     {
-        if (strtolower($command->getName()) == "commandspy" or strtolower($command->getName()) == "cspy") {
-            if ($sender instanceof Player) {
-                if ($sender->hasPermission("commandspy.cmd")) {
-                    if (!isset($this->snoopers[$sender->getName()])) {
-                        $sender->sendMessage("§aSpy-Mode activated.");
-                        $this->snoopers[$sender->getName()] = $sender;
-                        return true;
-                    } else {
-                        $sender->sendMessage("§cSpy-mode deactivated.");
-                        unset($this->snoopers[$sender->getName()]);
-                        return true;
-                    }
-                } else {
-                    $sender->sendMessage("§cYou don't have permission to use this command!");
-                    return true;
-                }
+        $senderName = $sender->getName();
+        if (!isset($this->snoopers[$senderName])) {
+            $this->snoopers[$senderName] = true;
+            $sender->sendMessage(self::PREFIX . TextFormat::GREEN . "Activated.");
+        } else {
+            unset($this->snoopers[$senderName]);
+            $sender->sendMessage(self::PREFIX . TextFormat::RED . "De-activated.");
+        }
+    }
+
+    public function toggleTargetSpyMode(Player $sender, Player $target): void
+    {
+        $targetName = $target->getName();
+        if ($sender->hasPermission("commandspy.cmd.target")) {
+            if (!$this->isSpyingOnTarget($sender, $targetName)) {
+                $this->targetedSnoopers[$sender->getName()][$targetName] = true;
+                $this->targetValue[$sender->getName()][$targetName] = true;
+                $sender->sendMessage(self::PREFIX . TextFormat::GREEN . "Now spying on " . TextFormat::GOLD . $targetName . TextFormat::GREEN . "'s commands.");
             } else {
-                if ($this->cfg->get("Log-SpyMode-To-Console") == "false") {
-                    $sender->sendMessage("Set 'Log-SpyMode-To-Console' to 'true' to enable spy-mode in console");
-                } else {
-                    $sender->sendMessage("Spy-mode is already active.");
-                }
+                unset($this->targetedSnoopers[$sender->getName()][$targetName]);
+                unset($this->targetValue[$sender->getName()][$targetName]);
+                $sender->sendMessage(self::PREFIX . TextFormat::GREEN . "No longer spying on " . TextFormat::GOLD . $targetName . TextFormat::GREEN . "'s commands.");
+            }
+        } else $sender->sendMessage(TextFormat::RED . "You don't have permission to use this command!");
+    }
+
+    public function listSnoopers(Player $sender): void
+    {
+        $sender->sendMessage("§8»§6§lList of snoopers§r§8:");
+        $allSnoopers = array_merge($this->snoopers, $this->targetedSnoopers);
+
+        if (empty($allSnoopers)) {
+            $sender->sendMessage("§8» §aNobody is currently snooping around.");
+        } else {
+            foreach ($allSnoopers as $spyName => $spyMode) {
+                if (is_array($spyMode) && !empty($spyMode)) {
+                    $targetList = implode(", ", array_keys($spyMode));
+                    $sender->sendMessage("§8»§e " . $spyName . " §ais spying on§8: §6" . $targetList);
+                } else $sender->sendMessage("§8»§e " . $spyName . " §ais in §6global spy mode§a.");
             }
         }
-        return true;
+    }
+
+    public function isSpying(Player $sender): bool
+    {
+        if (in_array($sender->getName(), $this->getSnoopers()) === true) {
+            return true;
+        } else return false;
+    }
+
+    public function isSpyingOnTarget(Player $sender, string $targetName): bool
+    {
+        if (isset($this->targetedSnoopers[$sender->getName()]) && isset($this->targetedSnoopers[$sender->getName()][$targetName])) {
+            return true;
+        } else return false;
+    }
+
+    public function isSpyingOnTargetValue(Player $sender): bool
+    {
+        if (isset($this->targetValue[$sender->getName()]) && $this->targetValue[$sender->getName()]) {
+            return true;
+        } else return false;
+    }
+
+    public function getSnoopers(): array
+    {
+        return $this->snoopers;
+    }
+
+    public function getTargetValue(): array
+    {
+        return $this->targetValue;
+    }
+
+    public function getProtectedPlayers(): array
+    {
+        return $this->protectedPlayers;
+    }
+
+    public function getProtectedCommands(): array
+    {
+        return $this->protectedCommands;
     }
 }
